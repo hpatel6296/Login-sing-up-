@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome Back</title>
+    <meta name="description" content="Secure login portal to access your account via Email or Phone.">
+    <!-- Google Fonts: Inter and Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-anim"></div>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 16px;">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <h1>Welcome Back</h1>
+            <p>Please enter your details to sign in.</p>
+        </div>
+        
+        <div class="tabs">
+            <button type="button" class="tab active" data-tab="email" onclick="switchTab(this)">Email</button>
+            <button type="button" class="tab" data-tab="phone" onclick="switchTab(this)">Phone</button>
+        </div>
+
+        <form id="loginForm">
+            <div id="emailInputGrp" class="input-group">
+                <input type="email" id="email" placeholder=" " required>
+                <label for="email">Email address</label>
+            </div>
+            
+            <div id="phoneInputGrp" class="input-group hidden">
+                <input type="tel" id="phone" placeholder=" " pattern="[0-9]{10,14}">
+                <label for="phone">Phone number</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password" placeholder=" " required>
+                <label for="password">Password</label>
+            </div>
+
+            <div class="form-actions">
+                <label class="remember">
+                    <input type="checkbox">
+                    <span>Remember for 30 days</span>
+                </label>
+                <a href="Forgotpage.html" class="forgot-password">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Sign in</button>
+            
+            <p class="signup-prompt">
+                Don't have an account? <a href="Signuppage.html">Sign up</a>
+            </p>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedIdentifier = localStorage.getItem('savedIdentifier');
+            const savedLoginType = localStorage.getItem('savedLoginType');
+            
+            if (savedIdentifier && savedLoginType) {
+                document.querySelector('.remember input[type="checkbox"]').checked = true;
+                if (savedLoginType === 'phone') {
+                    // Slight delay to allow DOM to be fully ready
+                    setTimeout(() => document.querySelector('.tab[data-tab="phone"]').click(), 10);
+                    document.getElementById('phone').value = savedIdentifier;
+                } else {
+                    document.getElementById('email').value = savedIdentifier;
+                }
+            }
+        });
+
+        function switchTab(clickedTab) {
+            // Update active styling
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
+
+            const tabType = clickedTab.getAttribute('data-tab');
+            const emailGrp = document.getElementById('emailInputGrp');
+            const phoneGrp = document.getElementById('phoneInputGrp');
+            const emailInput = document.getElementById('email');
+            const phoneInput = document.getElementById('phone');
+
+            if (tabType === 'email') {
+                emailGrp.classList.remove('hidden');
+                phoneGrp.classList.add('hidden');
+                emailInput.setAttribute('required', 'true');
+                phoneInput.removeAttribute('required');
+                phoneInput.value = ''; // clear hidden field
+            } else {
+                phoneGrp.classList.remove('hidden');
+                emailGrp.classList.add('hidden');
+                phoneInput.setAttribute('required', 'true');
+                emailInput.removeAttribute('required');
+                emailInput.value = ''; // clear hidden field
+            }
+        }
+        
+        // Handle Form Submission with Backend API
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="spinner"></span> Processing...';
+            btn.style.opacity = '0.9';
+            btn.style.cursor = 'not-allowed';
+            
+            // Gather details
+            const isEmailTab = document.querySelector('.tab[data-tab="email"]').classList.contains('active');
+            const type = isEmailTab ? 'email' : 'phone';
+            const identifier = document.getElementById(type).value;
+            const password = document.getElementById('password').value;
+            const remember = document.querySelector('input[type="checkbox"]').checked;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, identifier, password, remember })
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    btn.innerHTML = data.message;
+                    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)'; // Green success
+                    
+                    if (remember) {
+                        localStorage.setItem('savedIdentifier', identifier);
+                        localStorage.setItem('savedLoginType', type);
+                    } else {
+                        localStorage.removeItem('savedIdentifier');
+                        localStorage.removeItem('savedLoginType');
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.href = 'Dashboard.html';
+                    }, 1200);
+                    return; // exit the function so it doesn't clear the success state too early
+                } else {
+                    btn.innerHTML = data.message || 'Error occurred';
+                    btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red error
+                }
+            } catch (err) {
+                btn.innerHTML = 'Network Error';
+                btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red error
+            }
+
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

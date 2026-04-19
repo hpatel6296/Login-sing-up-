@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container {
+            text-align: center;
+        }
+        .dashboard-container h1 {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+        .dashboard-container p {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-anim"></div>
+    <div class="login-container dashboard-container">
+        <h1>Welcome! 🎉</h1>
+        <p>You have successfully logged in.</p>
+        <button onclick="logout()" class="submit-btn" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color);">
+            Sign out
+        </button>
+    </div>
+    <script>
+        function logout() {
+            window.location.href = 'Loginpage.html';
+        }
+    </script>
+</body>
+</html>

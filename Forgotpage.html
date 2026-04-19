@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <!-- Google Fonts: Inter and Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-anim"></div>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 16px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h1>Reset Password</h1>
+            <p>Enter your details and a new password below.</p>
+        </div>
+        
+        <div class="tabs">
+            <button type="button" class="tab active" data-tab="email" onclick="switchTab(this)">Email</button>
+            <button type="button" class="tab" data-tab="phone" onclick="switchTab(this)">Phone</button>
+        </div>
+
+        <form id="resetForm">
+            <div id="emailInputGrp" class="input-group">
+                <input type="email" id="identifier_email" placeholder=" " required>
+                <label for="identifier_email">Account Email</label>
+            </div>
+            
+            <div id="phoneInputGrp" class="input-group hidden">
+                <input type="tel" id="identifier_phone" placeholder=" " pattern="[0-9]{10,14}">
+                <label for="identifier_phone">Account Phone</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="newPassword" placeholder=" " required pattern="^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$" title="Password must be at least 8 characters long, and include an uppercase letter, a number, and a special character.">
+                <label for="newPassword">New Password</label>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">Update Password</button>
+            
+            <p class="signup-prompt">
+                Remember your password? <a href="Loginpage.html">Back to Login</a>
+            </p>
+        </form>
+    </div>
+
+    <script>
+        function switchTab(clickedTab) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
+
+            const tabType = clickedTab.getAttribute('data-tab');
+            const emailGrp = document.getElementById('emailInputGrp');
+            const phoneGrp = document.getElementById('phoneInputGrp');
+            const emailInput = document.getElementById('identifier_email');
+            const phoneInput = document.getElementById('identifier_phone');
+
+            if (tabType === 'email') {
+                emailGrp.classList.remove('hidden');
+                phoneGrp.classList.add('hidden');
+                emailInput.setAttribute('required', 'true');
+                phoneInput.removeAttribute('required');
+                phoneInput.value = ''; 
+            } else {
+                phoneGrp.classList.remove('hidden');
+                emailGrp.classList.add('hidden');
+                phoneInput.setAttribute('required', 'true');
+                emailInput.removeAttribute('required');
+                emailInput.value = ''; 
+            }
+        }
+        
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<span class="spinner"></span> Working...';
+            btn.style.opacity = '0.9';
+            btn.style.cursor = 'not-allowed';
+            
+            const isEmailTab = document.querySelector('.tab[data-tab="email"]').classList.contains('active');
+            const type = isEmailTab ? 'email' : 'phone';
+            const identifier = document.getElementById(isEmailTab ? 'identifier_email' : 'identifier_phone').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, identifier, newPassword })
+                });
+                
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    btn.innerHTML = data.message;
+                    btn.style.background = 'linear-gradient(135deg, #10b981, #059669)'; 
+                    setTimeout(() => {
+                        window.location.href = 'Loginpage.html';
+                    }, 1500);
+                    return;
+                } else {
+                    btn.innerHTML = data.message || 'Error occurred';
+                    btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; 
+                }
+            } catch (err) {
+                btn.innerHTML = 'Network Error';
+                btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; 
+            }
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
